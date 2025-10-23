@@ -7552,7 +7552,7 @@ function zh({ gameStarted: g, announceBotCollision: M }) {
     return v.current = requestAnimationFrame(P), () => {
       v.current && cancelAnimationFrame(v.current);
     };
-  }, []), al.useEffect(() => (q.current = new Worker(new URL("" + new URL("botWorker-BU-LmIsK.js", import.meta.url).href, import.meta.url)), q.current.onmessage = (w) => {
+  }, []), al.useEffect(() => (q.current = new Worker(new URL("/webAsteroids/assets/botWorker-BU-LmIsK.js", import.meta.url)), q.current.onmessage = (w) => {
     j.current = w.data;
   }, () => {
     var _a;
