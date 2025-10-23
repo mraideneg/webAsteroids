@@ -1,15 +1,18 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["DOM", "ESNext"],
-    "jsx": "react-jsx",             // 👈 This enables JSX
-    "moduleResolution": "Node",
-    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "node",
     "esModuleInterop": true,
+    "allowJs": true,
     "strict": true,
-    "skipLibCheck": true
+    "outDir": "dist"
   },
-  "include": ["src"]                // or "app" if that’s where your files live
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "src/wasm/**/*",
+    "src/App1.tsx",
+    "src/baseApp1.tsx"
+  ]
 }

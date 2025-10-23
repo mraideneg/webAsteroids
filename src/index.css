@@ -52,9 +52,9 @@ html, body, #root {
 }
 
 .canvas-wrapper {
-  width: 450px;
-  height: 450px;
-  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .canvas-content {
