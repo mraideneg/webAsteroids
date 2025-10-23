@@ -8,7 +8,7 @@ const initBot = async () => {
   botInstance = await BotModule({
     locateFile: (path) => {
       if (path.endsWith('.wasm')) {
-        // Go up one level from assets/ to find bot.wasm in root
+        // Absolute path
         return '/webAsteroids/bot.wasm';
       }
       return path;
