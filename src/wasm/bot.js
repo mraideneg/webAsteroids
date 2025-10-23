@@ -3772,4 +3772,3 @@ if (typeof exports === 'object' && typeof module === 'object') {
   module.exports.default = BotModule;
 } else if (typeof define === 'function' && define['amd'])
   define([], () => BotModule);
-
