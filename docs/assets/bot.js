@@ -3,6 +3,8 @@
 
 // Single threaded MINIMAL_RUNTIME programs do not need access to
 // document.currentScript, so a simple export declaration is enough.
+console.log('✅ bot.js file has started loading and executing.');
+
 var BotModule = (() => {
   // When MODULARIZE this JS may be executed later,
   // after document.currentScript is gone, so we save it.
@@ -3772,5 +3774,6 @@ if (typeof exports === 'object' && typeof module === 'object') {
   module.exports.default = BotModule;
 } else if (typeof define === 'function' && define['amd'])
   define([], () => BotModule);
+
 
 
