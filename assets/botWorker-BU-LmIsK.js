@@ -1,3 +1,4 @@
+// importing from outside of /asserts
 importScripts('../bot.js');
 
 let botInstance = null;
