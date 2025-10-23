@@ -1,4 +1,4 @@
-// botWorker-C0QKnVw-.js (or whatever your source file is)
+// botWorker-C0QKnVw-.js (Updated to check import exports)
 
 // 1. Setup the necessary URL for dynamic import (requires 'type: module').
 const botJsURL = new URL("./bot.js", import.meta.url);
@@ -9,17 +9,28 @@ let t = null; // 't' will hold the instantiated WASM module object
     try {
         console.log("Worker: Starting WASM module initialization...");
 
-        // Dynamically import the Emscripten wrapper. This executes bot.js 
-        // and defines the global factory function 'BotModule'.
-        await import(botJsURL);
+        // Dynamically import the Emscripten wrapper.
+        // The result is the module object containing all exports.
+        const botModuleExports = await import(botJsURL);
         
-        // Check for the global function defined by the executed script.
-        if (typeof self.BotModule !== 'function') {
-            throw new Error("BotModule factory not available after dynamic import.");
+        let BotModuleFactory = null;
+
+        // Try to identify the factory function from the exports or the global scope.
+        if (typeof botModuleExports.default === 'function') {
+            // Case A: Emscripten used EXPORT_ES6=1 and exported as default.
+            BotModuleFactory = botModuleExports.default;
+        } else if (typeof self.BotModule === 'function') {
+            // Case B: The script executed and defined BotModule on the global 'self'.
+            BotModuleFactory = self.BotModule;
+        }
+        
+        // Final check: did we find the factory?
+        if (BotModuleFactory === null) {
+             throw new Error("BotModule factory not found in module exports or global scope.");
         }
         
         // Call the factory function to load the WASM binary and instantiate the module.
-        t = await self.BotModule(); 
+        t = await BotModuleFactory();
         
         console.log("✅ Worker: WASM module successfully loaded. Bot is ready.");
 
@@ -38,13 +49,13 @@ self.onmessage = async n => {
     
     // Deconstruct and prepare the data for the WASM function.
     const { ship: e, asteroids: l } = n.data;
-    const a = new t.AsteroidVector; // Assuming this is your Embind vector class
+    const a = new t.AsteroidVector;
 
     for (const o of l) {
         const s = new t.Asteroid;
         s.posX = o.pos[0], s.posY = o.pos[1], s.velX = o.vel[0], s.velY = o.vel[1], s.radius = o.radius;
         a.push_back(s);
-        s.delete(); // Clean up the individual Asteroid objects after pushing
+        s.delete(); // Clean up the individual Asteroid objects
     }
 
     // Call the WASM-exported C++ function.
