@@ -2,33 +2,31 @@
 
 // 1. Setup the necessary URL (we still need this for Emscripten's inner workings
 //    if it needs to resolve other assets, but we'll use a direct path for now).
-const botJsURL = "./bot.js"; // Use a simple relative path for importScripts
+const botJsURL = new URL("./bot.js", import.meta.url);
 let t = null;
 
-try {
-    console.log("Worker: Starting WASM module initialization via importScripts...");
+(async () => {
+    try {
+        console.log("Worker: Starting WASM module initialization...");
 
-    // This forces the script to execute in the worker's global scope (self),
-    // guaranteeing that 'BotModule' is created globally.
-    // This is safe because you reverted to a Module Worker (which allows this context).
-    self.importScripts(botJsURL); 
+        // **THIS IS THE CORRECT LINE:** Use dynamic import()
+        const botModuleExports = await import(botJsURL); 
 
-    // Check for the global function defined by the executed script.
-    if (typeof self.BotModule !== 'function') {
-        // If this line executes, something is fundamentally wrong with the bot.js file content.
-        throw new Error("BotModule factory not available after importScripts. Check the bot.js file content.");
-    }
-    
-    // Call the factory function to load the WASM binary and instantiate the module.
-    // We must call it inside an async IIFE or function because it returns a Promise.
-    (async () => {
-        t = await self.BotModule(); 
+        // Access the factory via the 'default' export (due to -s EXPORT_ES6=1)
+        const BotModuleFactory = botModuleExports.default; 
+
+        if (typeof BotModuleFactory !== 'function') {
+            throw new Error("Factory not found as default export. Check emcc flags (-s EXPORT_ES6=1).");
+        }
+        
+        t = await BotModuleFactory(); 
+        
         console.log("✅ Worker: WASM module successfully loaded. Bot is ready.");
-    })();
 
-} catch (error) {
-    console.error("❌ FATAL WASM Initialization Error (importScripts failed):", error);
-}
+    } catch (error) {
+        console.error("❌ FATAL WASM Initialization Error:", error);
+    }
+})();
 
 // 3. The primary message handler (remains the same).
 self.onmessage = async n => {
