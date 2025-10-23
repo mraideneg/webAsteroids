@@ -9,7 +9,7 @@ const initBot = async () => {
     locateFile: (path) => {
       if (path.endsWith('.wasm')) {
         // Go up one level from assets/ to find bot.wasm in root
-        return '../' + path;
+        return '/webAsteroids/bot.wasm';
       }
       return path;
     }
