@@ -1,4 +1,4 @@
-importScripts('bot.js');
+importScripts('./bot.js');
 
 let botInstance = null;
 
