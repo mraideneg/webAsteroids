@@ -7,6 +7,11 @@ import React, { useRef, useEffect, useCallback } from "react";
 // - Optional WebSocket input support (commented section) to approximate the original TCP input
 // - Uses requestAnimationFrame game loop for smooth rendering
 
+interface BaseAppProps {
+  announceHumanCollision: () => void;
+  announceGameStart: () => void;
+}
+
 // Constants (mirrors the Python constants)
 const WIDTH = 450;
 const HEIGHT = 450;
@@ -182,7 +187,7 @@ class Asteroid {
 }
 
 // React component
-export default function AsteroidsWeb(): JSX.Element {
+export default function AsteroidsWeb({ announceHumanCollision, announceGameStart }: BaseAppProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
@@ -191,8 +196,6 @@ export default function AsteroidsWeb(): JSX.Element {
   const shipRef = useRef<Ship>(new Ship());
   const bulletsRef = useRef<Bullet[]>([]);
   const asteroidsRef = useRef<Asteroid[]>([]);
-  const scoreRef = useRef<number>(0);
-  const livesRef = useRef<number>(1);
   const stateRef = useRef<string>("TITLE");
 
   // Input
@@ -221,8 +224,6 @@ export default function AsteroidsWeb(): JSX.Element {
     shipRef.current = new Ship();
     bulletsRef.current = [];
     asteroidsRef.current = [];
-    scoreRef.current = 0;
-    livesRef.current = 1;
     spawnWave(START_ASTEROIDS);
     stateRef.current = "TITLE";
   }, []);
@@ -283,7 +284,6 @@ export default function AsteroidsWeb(): JSX.Element {
         if (dist(b.pos as Vec2, a.pos as Vec2) < a.radius + 2) {
           bulletRemoveIdxs.add(bi);
           toRemoveAst.push(ai);
-          scoreRef.current += 100 * a.size;
           toAddAst.push(...splitAsteroid(a));
         }
       });
@@ -306,14 +306,8 @@ export default function AsteroidsWeb(): JSX.Element {
       for (let i = 0; i < asteroidsRef.current.length; i++) {
         const a = asteroidsRef.current[i];
         if (dist(shipRef.current.pos as Vec2, a.pos as Vec2) < a.radius + shipRef.current.radius - 3) {
-          livesRef.current -= 1;
-          if (livesRef.current <= 0) {
-            stateRef.current = "GAMEOVER";
-          } else {
-            shipRef.current = new Ship();
-            shipRef.current.invulnerable = true;
-            shipRef.current.invulnerableTimer = INVULNERABLE_TIME;
-          }
+          announceHumanCollision();
+          stateRef.current = "GAMEOVER";
           asteroidsRef.current.splice(i, 1);
           break;
         }
@@ -321,7 +315,7 @@ export default function AsteroidsWeb(): JSX.Element {
     }
 
     if (asteroidsRef.current.length === 0) {
-      spawnWave(START_ASTEROIDS + 1 + Math.floor(scoreRef.current / 1000));
+      spawnWave(START_ASTEROIDS + 1);
     }
 
     // reset ephemeral inputs
@@ -352,8 +346,6 @@ export default function AsteroidsWeb(): JSX.Element {
     ctx.fillStyle = WHITE;
     ctx.font = "16px Consolas, monospace";
     ctx.textBaseline = "top";
-    ctx.fillText(`Score: ${scoreRef.current}`, 10, 8);
-    ctx.fillText(`Lives: ${"❤".repeat(livesRef.current)}`, WIDTH - 120, 8);
 
     // overlays
     if (stateRef.current === "TITLE") {
@@ -377,8 +369,6 @@ export default function AsteroidsWeb(): JSX.Element {
       ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2 - 30);
       ctx.fillStyle = WHITE;
       ctx.font = "16px Consolas, monospace";
-      ctx.fillText(`Final Score: ${scoreRef.current}`, WIDTH / 2, HEIGHT / 2 + 10);
-      ctx.fillText("Press ENTER to restart", WIDTH / 2, HEIGHT / 2 + 50);
       ctx.textAlign = "left";
     }
   }
@@ -496,6 +486,7 @@ export default function AsteroidsWeb(): JSX.Element {
 
         case "enter":
           if (stateRef.current === "TITLE" || stateRef.current === "GAMEOVER") {
+            announceGameStart();
             reset();
             stateRef.current = "PLAYING";
           }
@@ -547,12 +538,8 @@ export default function AsteroidsWeb(): JSX.Element {
 
   // simple UI wrapper
   return (
-    <div className="p-4">
-      <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} style={{ width: WIDTH, height: HEIGHT, display: "block", borderRadius: 8, boxShadow: "0 6px 18px rgba(0,0,0,0.5)" }} />
-      <div className="mt-2 text-sm font-mono text-gray-200" style={{ color: "#e8e8e8" }}>
-        <div>Controls: ArrowLeft/ArrowRight or A/D to rotate • ArrowUp/W to thrust • Space to shoot</div>
-        <div>Press ENTER to start • P to pause</div>
-      </div>
+    <div className="p-4 canvas-wrapper">
+      <canvas ref={canvasRef} width={450} height={450} style={{width: "450px", height: "450px", borderRadius: 8, boxShadow: "0 6px 18px rgba(0,0,0,0.5)"}} />
     </div>
   );
 }

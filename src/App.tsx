@@ -1,6 +1,11 @@
 // AsteroidsWebBot.tsx
 import React, { useRef, useEffect, useCallback } from "react";
 
+interface AppProps {
+  gameStarted: boolean;
+  announceBotCollision: () => void;
+}
+
 // Constants
 const WIDTH = 450;
 const HEIGHT = 450;
@@ -96,7 +101,7 @@ class Asteroid {
 }
 
 // Main component
-export default function AsteroidsWebBot(): JSX.Element {
+export default function AsteroidsWebBot( {gameStarted, announceBotCollision}: AppProps ): JSX.Element {
   const canvasRef=useRef<HTMLCanvasElement|null>(null);
   const rafRef=useRef<number|null>(null);
   const lastTimeRef=useRef<number|null>(null);
@@ -105,8 +110,6 @@ export default function AsteroidsWebBot(): JSX.Element {
   const shipRef=useRef<Ship>(new Ship());
   const bulletsRef=useRef<Bullet[]>([]);
   const asteroidsRef=useRef<Asteroid[]>([]);
-  const scoreRef=useRef<number>(0);
-  const livesRef=useRef<number>(1);
   const stateRef=useRef<string>("TITLE");
 
   // Bot
@@ -123,7 +126,7 @@ export default function AsteroidsWebBot(): JSX.Element {
 
   const reset=useCallback(()=>{
     shipRef.current=new Ship(); bulletsRef.current=[]; asteroidsRef.current=[];
-    scoreRef.current=0; livesRef.current=1; spawnWave(START_ASTEROIDS); stateRef.current="PLAYING";
+    spawnWave(START_ASTEROIDS); stateRef.current="TITLE";
   },[spawnWave]);
 
   function splitAsteroid(a:Asteroid):Asteroid[]{
@@ -182,7 +185,6 @@ export default function AsteroidsWebBot(): JSX.Element {
         if (dist(b.pos, a.pos) < a.radius + 2) {
           bulletRemoveIdxs.add(bi);
           toRemoveAst.push(ai);
-          scoreRef.current += 100 * a.size;
           toAddAst.push(...splitAsteroid(a));
         }
       });
@@ -199,17 +201,11 @@ export default function AsteroidsWebBot(): JSX.Element {
 
     // Ship collisions
     if (!shipRef.current.invulnerable) {
+      announceBotCollision();
       for (let i = 0; i < asteroidsRef.current.length; i++) {
         const a = asteroidsRef.current[i];
         if (dist(shipRef.current.pos, a.pos) < a.radius + shipRef.current.radius - 3) {
-          livesRef.current -= 1;
-          if (livesRef.current <= 0) {
-            stateRef.current = "GAMEOVER";
-          } else {
-            shipRef.current = new Ship();
-            shipRef.current.invulnerable = true;
-            shipRef.current.invulnerableTimer = INVULNERABLE_TIME;
-          }
+          stateRef.current = "GAMEOVER";
           asteroidsRef.current.splice(i, 1);
           break;
         }
@@ -218,7 +214,7 @@ export default function AsteroidsWebBot(): JSX.Element {
 
     // Spawn new wave if cleared
     if (asteroidsRef.current.length === 0) {
-      spawnWave(START_ASTEROIDS + 1 + Math.floor(scoreRef.current / 1000));
+      spawnWave(START_ASTEROIDS + 1);
     }
 
     // Bot shooting (optional, same as human)
@@ -279,14 +275,6 @@ export default function AsteroidsWebBot(): JSX.Element {
     // Ship
     drawShip(ctx, shipRef.current);
 
-    // HUD: Score & Lives
-    ctx.fillStyle = WHITE;
-    ctx.font = "16px Consolas, monospace";
-    ctx.textBaseline = "top";
-    ctx.textAlign = "left";
-    ctx.fillText(`Score: ${scoreRef.current}`, 10, 8);
-    ctx.fillText(`Lives: ${"❤".repeat(livesRef.current)}`, WIDTH - 120, 8);
-
     // Overlays
     if (stateRef.current === "TITLE") {
       ctx.fillStyle = WHITE;
@@ -311,8 +299,6 @@ export default function AsteroidsWebBot(): JSX.Element {
 
       ctx.fillStyle = WHITE;
       ctx.font = "16px Consolas, monospace";
-      ctx.fillText(`Final Score: ${scoreRef.current}`, WIDTH / 2, HEIGHT / 2 + 10);
-      ctx.fillText("Press ENTER to restart", WIDTH / 2, HEIGHT / 2 + 50);
       ctx.textAlign = "left";
     }
   }
@@ -352,10 +338,16 @@ export default function AsteroidsWebBot(): JSX.Element {
     return ()=>clearInterval(interval);
   },[]);
 
+  useEffect(() => {
+    if (gameStarted) {
+      reset();
+      stateRef.current = "PLAYING"
+    }
+  }, [gameStarted])
+
   return (
-    <div className="p-4">
-      <canvas ref={canvasRef} width={WIDTH} height={HEIGHT}
-        style={{width:WIDTH,height:HEIGHT,display:"block",borderRadius:8,boxShadow:"0 6px 18px rgba(0,0,0,0.5)"}} />
+    <div className="p-4 canvas-wrapper">
+      <canvas ref={canvasRef} width={450} height={450} style={{width: "450px", height: "450px", borderRadius: 8, boxShadow: "0 6px 18px rgba(0,0,0,0.5)"}} />
     </div>
   );
 }
