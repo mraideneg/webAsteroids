@@ -1,2 +1,49 @@
-// importing from up a level
-importScripts('../bot.js');let n=null;const r=async()=>{n=await BotModule({locateFile:s=>s.endsWith(".wasm")?"/"+s:s})};r();self.onmessage=async s=>{if(!n)return;const{ship:o,asteroids:i}=s.data,a=new n.AsteroidVector;for(const t of i){const e=new n.Asteroid;e.posX=t.pos[0],e.posY=t.pos[1],e.velX=t.vel[0],e.velY=t.vel[1],e.radius=t.radius,a.push_back(e),e.delete()}const l=n.decide(o.pos[0],o.pos[1],o.vel[0],o.vel[1],o.angle,a);a.delete(),self.postMessage(l)};
+importScripts('../bot.js');
+
+let botInstance = null;
+
+const initBot = async () => {
+  // Override locateFile to find bot.wasm with the correct base path
+  botInstance = await BotModule({
+    locateFile: (path) => {
+      if (path.endsWith('.wasm')) {
+        // Go up one level from assets/ to find bot.wasm in root
+        return '../' + path;
+      }
+      return path;
+    }
+  });
+};
+
+initBot();
+
+self.onmessage = async (ev) => {
+  if (!botInstance) return;
+
+  const { ship, asteroids } = ev.data;
+
+  const wasmAsteroids = new botInstance.AsteroidVector();
+  for (const a of asteroids) {
+    const wa = new botInstance.Asteroid();
+    wa.posX = a.pos[0];
+    wa.posY = a.pos[1];
+    wa.velX = a.vel[0];
+    wa.velY = a.vel[1];
+    wa.radius = a.radius;
+    wasmAsteroids.push_back(wa);
+    wa.delete();
+  }
+
+  const move = botInstance.decide(
+    ship.pos[0],
+    ship.pos[1],
+    ship.vel[0],
+    ship.vel[1],
+    ship.angle,
+    wasmAsteroids
+  );
+
+  wasmAsteroids.delete();
+
+  self.postMessage(move);
+};
