@@ -560,7 +560,7 @@ function createExportWrapper(name, nargs) {
 var wasmBinaryFile;
 
 function findWasmBinary() {
-    return locateFile('bot.wasm');
+    return locateFile('./bot.wasm');
 }
 
 function getBinarySync(file) {
@@ -3772,4 +3772,5 @@ if (typeof exports === 'object' && typeof module === 'object') {
   module.exports.default = BotModule;
 } else if (typeof define === 'function' && define['amd'])
   define([], () => BotModule);
+
 
